@@ -1,0 +1,14 @@
+services:
+  http-prober:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_NAME: ${NODE_NAME}
+      TARGETS: ${TARGETS}
+      PROBE_INTERVAL: ${PROBE_INTERVAL:-300000}
+      PAYLOAD_PATH: /data/payload.json
+      LOG_PATH: /logs/probes.log
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
