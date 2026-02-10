@@ -26,6 +26,48 @@ docker compose up --build -d
 | `PAYLOAD_PATH` | Path to custom JSON payload inside container | `/data/payload.json` |
 | `LOG_PATH` | Path to log file inside container | `/logs/probes.log` |
 
+## Adding Targets
+
+Targets are the remote nodes this instance will probe. Set them via the `TARGETS` environment variable.
+
+**Format:** `name=host:port` entries, comma-separated.
+
+```
+TARGETS="name1=host1:port1,name2=host2:port2"
+```
+
+| Part | Description | Required |
+|---|---|---|
+| `name` | Label for the target node (used in logs) | Yes |
+| `host` | IP address or hostname | Yes |
+| `port` | Listening port | No (defaults to `3000`) |
+
+**Examples:**
+
+Single target:
+
+```bash
+TARGETS="eu-north-1=5.6.7.8:3000"
+```
+
+Multiple targets:
+
+```bash
+TARGETS="eu-north-1=5.6.7.8:3000,us-east-1=9.10.11.12:3000,dubai=1.2.3.4:3000"
+```
+
+Using hostnames instead of IPs:
+
+```bash
+TARGETS="eu-north-1=probe-eu.example.com:3000,us-east-1=probe-us.example.com:3000"
+```
+
+Port omitted (defaults to 3000):
+
+```bash
+TARGETS="eu-north-1=5.6.7.8"
+```
+
 ## Custom Payload
 
 Place your JSON file at `./data/payload.json`. It will be mounted into the container and sent as the POST body on each probe. If no file is provided, a default ~10KB payload is used.
