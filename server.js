@@ -16,15 +16,19 @@ const targets = (process.env.TARGETS || "")
     return { name, hostname, port: parseInt(port || "3000") };
   });
 
-// Load payload file
-let payload;
+// Load big payload from file
+let bigPayload;
 try {
-  payload = fs.readFileSync(PAYLOAD_PATH, "utf-8");
-  console.log(`[${NODE_NAME}] loaded payload from ${PAYLOAD_PATH} (${Buffer.byteLength(payload)} bytes)`);
+  bigPayload = fs.readFileSync(PAYLOAD_PATH, "utf-8");
+  console.log(`[${NODE_NAME}] loaded big payload from ${PAYLOAD_PATH} (${Buffer.byteLength(bigPayload)} bytes)`);
 } catch (err) {
-  payload = JSON.stringify({ source: NODE_NAME, data: "x".repeat(10000) });
+  bigPayload = JSON.stringify({ source: NODE_NAME, data: "x".repeat(10000) });
   console.log(`[${NODE_NAME}] payload file not found, using default`);
 }
+
+// Small hello-world payload
+const smallPayload = JSON.stringify({ source: NODE_NAME, message: "hello world" });
+console.log(`[${NODE_NAME}] small payload: ${Buffer.byteLength(smallPayload)} bytes`);
 
 function log(line) {
   const entry = `[${new Date().toISOString()}] ${line}`;
@@ -54,7 +58,7 @@ server.listen(PORT, () => {
 });
 
 // --- Client ---
-function probe(target) {
+function sendProbe(target, payload, label) {
   const start = process.hrtime.bigint();
 
   const req = http.request(
@@ -74,14 +78,14 @@ function probe(target) {
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
         const ms = Number(process.hrtime.bigint() - start) / 1e6;
-        log(`${NODE_NAME} -> ${target.name} | ${ms.toFixed(2)} ms | status=${res.statusCode}`);
+        log(`${NODE_NAME} -> ${target.name} [${label}] | ${ms.toFixed(2)} ms | status=${res.statusCode}`);
       });
     }
   );
 
   req.on("error", (err) => {
     const ms = Number(process.hrtime.bigint() - start) / 1e6;
-    log(`${NODE_NAME} -> ${target.name} | FAIL ${ms.toFixed(2)} ms | ${err.message}`);
+    log(`${NODE_NAME} -> ${target.name} [${label}] | FAIL ${ms.toFixed(2)} ms | ${err.message}`);
   });
 
   req.on("timeout", () => {
@@ -89,6 +93,11 @@ function probe(target) {
   });
 
   req.end(payload);
+}
+
+function probe(target) {
+  sendProbe(target, bigPayload, "big");
+  sendProbe(target, smallPayload, "small");
 }
 
 function startProbing() {
